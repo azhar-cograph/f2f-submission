@@ -1,0 +1,39 @@
+{
+	"info": {
+		"_postman_id": "c35ddd79-d3fa-4b77-82b1-6f121bd92417",
+		"name": "website-crawler",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "{{HOST}}/search_products/",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"query\":[\"women\",\"leg\"],\n\t\"start\":1,\n\t\"rows\":10\n}"
+				},
+				"url": {
+					"raw": "{{HOST}}/api/search_products/",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"search_products",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
