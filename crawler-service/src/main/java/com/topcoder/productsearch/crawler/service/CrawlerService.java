@@ -184,6 +184,9 @@ public class CrawlerService {
         break;
       }
       // following was never reached when crawling for IKEA.  So that means the while loop exited at break above.
+      // Attempt was being made not to add additional crawlertasks to the queueTasks but basically the tasks will be added one by
+      // one when the next time checkTask is executed. Also the queueTasks list will keep growing as well.  
+      
       logger.info("size of executing queue: "+ threadPoolExecutor.getTaskCount());
     }
 
