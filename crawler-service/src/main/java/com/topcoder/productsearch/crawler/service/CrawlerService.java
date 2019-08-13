@@ -86,6 +86,10 @@ public class CrawlerService {
     threadPoolExecutor = new CrawlerThreadPoolExecutor(parallelSize, parallelSize * 2, 0L,
         TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(parallelSize * 2));
     // set task completed callback
+    // this callback seems to create new CrawlerTask(s) IF the URL that it finds in shouldVisit Hashmap 
+    // is not mapped to Boolean.FALSE or is empty. ShouldVisit seems to only mark if a url should be visited. So if the URL
+    // is found in the ShouldVisit Hashmap is TRUE, then it has already been marked as it needs to be visited and we do not need to 
+    // create a CralwerTask out of it. 
     threadPoolExecutor.setExecutedHandler(runnable -> {
       CrawlerThread thread = (CrawlerThread) runnable;
       if (thread.getExpandUrl() != null && thread.getExpandUrl().size() > 0) {
@@ -121,6 +125,8 @@ public class CrawlerService {
   }
 
   /**
+   * Add the task to ShouldVisit Hashmap with key value of Boolean.TRUE. Key value of
+   * TRUE means that URL will be visited. Also
    * push task into pending queue
    *
    * @param task the task
@@ -132,7 +138,7 @@ public class CrawlerService {
   }
 
   /**
-   * check pending task and execute task if condition met
+   * check pending task queue and execute task if condition met
    */
   private void checkTask() {
 
@@ -148,8 +154,11 @@ public class CrawlerService {
         logger.warn(String.format("the elapsed time from the start reaches the time limit for a crawling process," +
                 " stop creating a new task, %d > %f",
             costTime, siteTimeLimit * 1000));
+        // this break appears to be BUG here.  As this will break out of the while loop not the checkTask() method.
+        // so it will still execute the thread     
         break;
       }
+
 
       // put into thread pool, start download page
       CrawlerThread thread = new CrawlerThread();
@@ -163,18 +172,24 @@ public class CrawlerService {
       thread.setMaxDepth(maxDepth);
       thread.setCrawlerService(this);
       thread.init();
-
+      // Why the URL in the ShouldVisit Hashmap needs to be marked TRUE again? when pushTask() method pushes 
+      // crawlerTask into queue which have url already marked as TRUE in the corresponding ShoudlVisit Hashmap?
       shouldVisit.put(thread.getCrawlerTask().getUrl(), Boolean.TRUE);
       threadPoolExecutor.execute(thread);
       logger.info("execute a new task, current running count = " + threadPoolExecutor.getRunningCount()
           + ", total running time(ms) = " + costTime);
+      logger.info("Get Active Count: "+ threadPoolExecutor.getActiveCount());
+      logger.info("Get Task Count: "+ threadPoolExecutor.getTaskCount());
       if (threadPoolExecutor.getRunningCount() >= threadPoolExecutor.getCorePoolSize()) {
         break;
       }
+      // following was never reached when crawling for IKEA.  So that means the while loop exited at break above.
+      logger.info("size of executing queue: "+ threadPoolExecutor.getTaskCount());
     }
 
     int taskSize = threadPoolExecutor.getRunningCount();
     if (taskSize <= 0) {
+      logger.info("taskSize is zero so shutting down gracefully.");
       threadPoolExecutor.shutdown();
     }
   }
